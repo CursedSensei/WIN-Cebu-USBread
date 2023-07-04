@@ -2,51 +2,14 @@
 #include "traymodify.h"
 #include "main.h"
 
+#pragma warning (disable : 4996)
 int main() {
-	HANDLE pipeA = INVALID_HANDLE_VALUE;
-	HANDLE pipeAwrite = INVALID_HANDLE_VALUE;
-	SECURITY_ATTRIBUTES attr;
-	ZeroMemory(&attr, sizeof(SECURITY_ATTRIBUTES));
-	attr.nLength = sizeof(SECURITY_ATTRIBUTES);
-	attr.bInheritHandle = TRUE;
-
-	if (CreatePipe(&pipeA, &pipeAwrite, &attr, 0) == 0) { return 1; }
-	if (!SetHandleInformation(pipeA, HANDLE_FLAG_INHERIT, 0)) { return 1; }
-
-	STARTUPINFOA sInfo;
-	ZeroMemory(&sInfo, sizeof(STARTUPINFOA));
-	sInfo.cb = sizeof(STARTUPINFOA);
-	sInfo.dwFlags = STARTF_USESTDHANDLES;
-	sInfo.hStdOutput = pipeAwrite;
-	PROCESS_INFORMATION pInfo;
-	ZeroMemory(&pInfo, sizeof(PROCESS_INFORMATION));
-	if (!CreateProcessA(nullptr, (LPSTR)"arp -a", nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &sInfo, &pInfo)) { return 2; }
-	WaitForSingleObject(pInfo.hProcess, INFINITE);
-	printf("to reading");
-	CloseHandle(pInfo.hProcess);
-	CloseHandle(pInfo.hThread);
-	CloseHandle(pipeAwrite);
-
-	char* rBuffer = (char*)malloc(32 *sizeof(char));
-	char rBuf[32];
-	DWORD bRead, nReaded = 0;
-	bool reStatus = FALSE;
-	while(1) {
-		reStatus = ReadFile(pipeA, rBuf, 32, &bRead, NULL);
-		if (!reStatus || bRead == 0) break;
-		memcpy(rBuffer + nReaded, rBuf, bRead);
-		nReaded += bRead;
-		if (bRead == 32) { rBuffer = (char*)realloc(rBuffer, nReaded + 32); }
-		else {
-			memset(rBuffer + nReaded, 0, 1);
-			printf("%s", rBuffer);
-			break; 
-		}
+	char* ips;
+	;for (int i = 0; ips[i] != NULL; i++) {
+		if (ips[i] == '\n') { printf("#"); }
+		else if (ips[i] == '\r') { printf("*"); }
+		else { printf("%c", ips[i]); }
 	}
-	CloseHandle(pipeA);
-	free(rBuffer);
-
-	return 0;
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);

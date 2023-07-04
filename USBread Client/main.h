@@ -27,6 +27,73 @@ public:
 
 };
 
+struct ipData {
+private:
+	char* allIp;
+	int offset = 0;
+
+public:
+	int initIp() {
+		HANDLE pipeA = INVALID_HANDLE_VALUE;
+		HANDLE pipeAwrite = INVALID_HANDLE_VALUE;
+		SECURITY_ATTRIBUTES attr;
+		ZeroMemory(&attr, sizeof(SECURITY_ATTRIBUTES));
+		attr.nLength = sizeof(SECURITY_ATTRIBUTES);
+		attr.bInheritHandle = TRUE;
+
+		if (CreatePipe(&pipeA, &pipeAwrite, &attr, 0) == 0) { return 1; }
+		if (!SetHandleInformation(pipeA, HANDLE_FLAG_INHERIT, 0)) { return 1; }
+
+		STARTUPINFOA sInfo;
+		ZeroMemory(&sInfo, sizeof(STARTUPINFOA));
+		sInfo.cb = sizeof(STARTUPINFOA);
+		sInfo.dwFlags = STARTF_USESTDHANDLES;
+		sInfo.hStdOutput = pipeAwrite;
+		PROCESS_INFORMATION pInfo;
+		ZeroMemory(&pInfo, sizeof(PROCESS_INFORMATION));
+		if (!CreateProcessA(nullptr, (LPSTR)"arp -a", nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &sInfo, &pInfo)) { return 2; }
+		WaitForSingleObject(pInfo.hProcess, INFINITE);
+		CloseHandle(pInfo.hProcess);
+		CloseHandle(pInfo.hThread);
+		CloseHandle(pipeAwrite);
+
+		char* rBuffer = (char*)malloc(32 * sizeof(char));
+		if (rBuffer == nullptr) { return 3; }
+		char rBuf[32];
+		DWORD bRead, nReaded = 0;
+		bool reStatus = FALSE;
+		while (1) {
+			reStatus = ReadFile(pipeA, rBuf, 32, &bRead, NULL);
+			if (!reStatus || bRead == 0) break;
+			memcpy(rBuffer + nReaded, rBuf, bRead);
+			nReaded += bRead;
+			if (bRead == 32) { rBuffer = (char*)realloc(rBuffer, nReaded + 32); }
+			else {
+				memset(rBuffer + nReaded, 0, 1);
+				break;
+			}
+		}
+		CloseHandle(pipeA);
+
+		//filter all dynamics
+
+		free(rBuffer);
+
+		return 0;
+	}
+
+	char* getIp() {
+		char ipnow[25];
+		int i;
+		for (i = 0; allIp[offset + i] != ' '; i++) {
+			if (allIp[offset] == '\0') { return NULL; }
+			ipnow[i] = allIp[offset + i];
+		}
+		offset += i + 1;
+		return ipnow;
+	}
+};
+
 int main_exitcall = 1;
 
 DWORD WINAPI keyThread(LPVOID args) {
