@@ -5,8 +5,12 @@
 int main() {
 	HANDLE pipeA = INVALID_HANDLE_VALUE;
 	HANDLE pipeAwrite = INVALID_HANDLE_VALUE;
+	SECURITY_ATTRIBUTES attr;
+	ZeroMemory(&attr, sizeof(SECURITY_ATTRIBUTES));
+	attr.nLength = sizeof(SECURITY_ATTRIBUTES);
+	attr.bInheritHandle = TRUE;
 
-	if (CreatePipe(&pipeA, &pipeAwrite, NULL, 0) == 0) { return 1; }
+	if (CreatePipe(&pipeA, &pipeAwrite, &attr, 0) == 0) { return 1; }
 	if (!SetHandleInformation(pipeA, HANDLE_FLAG_INHERIT, 0)) { return 1; }
 
 	STARTUPINFOA sInfo;
@@ -19,21 +23,30 @@ int main() {
 	if (!CreateProcessA(nullptr, (LPSTR)"arp -a", nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &sInfo, &pInfo)) { return 2; }
 	WaitForSingleObject(pInfo.hProcess, INFINITE);
 	printf("to reading");
-
-	char rBuf[500];
-	DWORD bRead;
-	bool reStatus = FALSE;
-	for (;;) {
-		reStatus = ReadFile(pipeA, rBuf, 500, &bRead, NULL) || bRead != 0;
-		if (!reStatus || bRead == 0) continue;
-		printf("%s", rBuf);
-		if (!reStatus) break;
-	}
-
 	CloseHandle(pInfo.hProcess);
 	CloseHandle(pInfo.hThread);
-	CloseHandle(pipeA);
 	CloseHandle(pipeAwrite);
+
+	char* rBuffer = (char*)malloc(32 *sizeof(char));
+	char rBuf[32];
+	DWORD bRead, nReaded = 0;
+	bool reStatus = FALSE;
+	while(1) {
+		reStatus = ReadFile(pipeA, rBuf, 32, &bRead, NULL);
+		if (!reStatus || bRead == 0) break;
+		memcpy(rBuffer + nReaded, rBuf, bRead);
+		nReaded += bRead;
+		if (bRead == 32) { rBuffer = (char*)realloc(rBuffer, nReaded + 32); }
+		else {
+			memset(rBuffer + nReaded, 0, 1);
+			printf("%s", rBuffer);
+			break; 
+		}
+	}
+	CloseHandle(pipeA);
+	free(rBuffer);
+
+	return 0;
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
