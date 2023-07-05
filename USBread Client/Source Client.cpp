@@ -1,15 +1,11 @@
 #include "Frameworks.h"
 #include "traymodify.h"
+#include "main_utils.h"
 #include "main.h"
 
-#pragma warning (disable : 4996)
 int main() {
-	char* ips;
-	;for (int i = 0; ips[i] != NULL; i++) {
-		if (ips[i] == '\n') { printf("#"); }
-		else if (ips[i] == '\r') { printf("*"); }
-		else { printf("%c", ips[i]); }
-	}
+	ipData ips;
+	return ips.initIp();
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);

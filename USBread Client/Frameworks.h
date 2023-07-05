@@ -9,3 +9,5 @@
 
 #define TRAY_CALLBACK (WM_USER + 0x100)
 #define DEFAULT_PORT "28771"
+
+int main_exitcall = 1;
