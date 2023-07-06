@@ -29,13 +29,14 @@ public:
 
 struct ipData {
 private:
-	char* allIp;
+	char* allIp = nullptr;
 	int offset = 0;
 
 public:
 	int initIp() {
 		HANDLE pipeA = INVALID_HANDLE_VALUE;
 		HANDLE pipeAwrite = INVALID_HANDLE_VALUE;
+
 		SECURITY_ATTRIBUTES attr;
 		ZeroMemory(&attr, sizeof(SECURITY_ATTRIBUTES));
 		attr.nLength = sizeof(SECURITY_ATTRIBUTES);
@@ -49,9 +50,12 @@ public:
 		sInfo.cb = sizeof(STARTUPINFOA);
 		sInfo.dwFlags = STARTF_USESTDHANDLES;
 		sInfo.hStdOutput = pipeAwrite;
+
 		PROCESS_INFORMATION pInfo;
 		ZeroMemory(&pInfo, sizeof(PROCESS_INFORMATION));
+
 		if (!CreateProcessA(NULL, (LPSTR)"arp -a", nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &sInfo, &pInfo)) { return 2; }
+
 		WaitForSingleObject(pInfo.hProcess, INFINITE);
 		CloseHandle(pInfo.hProcess);
 		CloseHandle(pInfo.hThread);
@@ -59,9 +63,11 @@ public:
 
 		char* rBuffer = (char*)malloc(32 * sizeof(char));
 		if (rBuffer == nullptr) { return 3; }
+
 		char rBuf[32];
 		DWORD bRead, nReaded = 0;
 		bool reStatus = FALSE;
+
 		while (1) {
 			reStatus = ReadFile(pipeA, rBuf, 32, &bRead, NULL);
 			if (!reStatus || bRead == 0) break;
@@ -76,14 +82,42 @@ public:
 				break;
 			}
 		}
+
 		CloseHandle(pipeA);
 
-		//filter all dynamics
+		char* nBuf = rBuffer;
+		for (nReaded = 0; strstr(nBuf, "dynamic") != nullptr; nReaded++) {
+			nBuf = strstr(nBuf, "dynamic");
+			nBuf++;
+		}
 
-		//for (int i = 0; rBuffer[i] != NULL; i++) {
-		//	if (rBuffer[i] == '\r') { printf("*"); }
-		//	else { printf("%c", rBuffer[i]); }
-		//}
+		if (nReaded != 0) {
+			allIp = (char*)malloc(sizeof(char) * 25 * nReaded);
+			if (allIp == nullptr) return 4;
+
+			bRead = -1;
+			nBuf = rBuffer;
+
+			while (nReaded) {
+				nBuf = strstr(nBuf, "dynamic");
+
+				while (*nBuf != '\n') nBuf--;
+				for (nBuf++; *nBuf == ' '; nBuf++);
+
+				while (*nBuf != ' ') {
+					bRead++;
+					allIp[bRead] = *nBuf;
+					nBuf++;
+				}
+
+				bRead++;
+				allIp[bRead] = ' ';
+				nBuf = strstr(nBuf, "dynamic") + 1;
+				nReaded--;
+			}
+
+			allIp[bRead] = '\0';
+		}
 
 		free(rBuffer);
 
@@ -91,14 +125,23 @@ public:
 	};
 
 	char* getIp() {
-		char ipnow[25];
+		if (allIp == nullptr || allIp[offset] == '\0') return nullptr;
+
+		char ipnow[25] = "";
 		int i;
-		for (i = 0; allIp[offset + i] != ' '; i++) {
-			if (allIp[offset] == '\0') { return NULL; }
+
+		for (i = 0; allIp[offset + i] != ' ' && allIp[offset + i] != '\0'; i++) {
 			ipnow[i] = allIp[offset + i];
 		}
-		offset += i + 1;
+
+		if (allIp[offset + i] == '\0') offset += i; else offset += i + 1;
+
 		return ipnow;
+	}
+
+	void dispose() {
+		if (allIp != nullptr) free(allIp);
+		offset = 0;
 	}
 };
 

@@ -3,11 +3,6 @@
 #include "main_utils.h"
 #include "main.h"
 
-int main() {
-	ipData ips;
-	return ips.initIp();
-}
-
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 _Use_decl_annotations_ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hInstPrev, PWSTR cmdline, int cmdshow) { 

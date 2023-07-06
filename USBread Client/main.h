@@ -15,23 +15,14 @@ int main_client() {
 	sockaddr.ai_protocol = IPPROTO_TCP;
 
 	SOCKET MainSock = INVALID_SOCKET;
+	ipData ipaddr;
 
-	FILE* outpipe = _popen("arp -a", "r");
-	if (outpipe != NULL) {
-		char buffered[128];
-		char ipNow[25];
-		while (fgets(buffered, sizeof(buffered), outpipe) != NULL) {
-			if (strstr(buffered, "dynamic")) {
-				strcpy_s(ipNow, "");
-				int i = 0;
-				while (buffered[i] == ' ') { i++; }
-				for (i; buffered[i] != ' '; i++) {
-					strncat_s(ipNow, &buffered[i], 1);
-				}
-			}
-			else { continue; }
+	if (!ipaddr.initIp()) {
+		char* ipNow = ipaddr.getIp();
+		while (ipNow != "") {
 
 			if (getaddrinfo(ipNow, DEFAULT_PORT, &sockaddr, &hostinfo)) {
+				ipaddr.dispose();
 				WSACleanup();
 				return 2;
 			}
@@ -41,6 +32,7 @@ int main_client() {
 				MainSock = socket(hostinfo->ai_family, hostinfo->ai_socktype, hostinfo->ai_protocol);
 				if (MainSock == INVALID_SOCKET) {
 					freeaddrinfo(hostinfo);
+					ipaddr.dispose();
 					WSACleanup();
 					return 31;
 				}
@@ -57,6 +49,7 @@ int main_client() {
 				break;
 			}
 
+			ipNow = ipaddr.getIp();
 		}
 	}
 	else {
@@ -64,9 +57,9 @@ int main_client() {
 		WSACleanup();
 		return 32;
 	}
-	_pclose(outpipe);
 
 	if (MainSock == INVALID_SOCKET) {
+		ipaddr.dispose();
 		WSACleanup();
 		return 33;
 	}
