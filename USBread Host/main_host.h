@@ -22,6 +22,8 @@ DWORD WINAPI accelThread(LPVOID args) {
 	return 0;
 }
 
+
+
 void pauseKey(HWND hWnd) {
 	main_exitcall = 2;
 	modtray(0);
@@ -77,12 +79,9 @@ int checkKey(char* key) {
 	else { return 0; }
 }
 
-int main_client(HWND hWnd) {
-	WSADATA wsData;
-	if (WSAStartup(MAKEWORD(2, 2), &wsData)) {
-		return 1;
-	}
 
+
+SOCKET connSocket() {
 	addrinfo sockaddr;
 	PADDRINFOA hostinfo = NULL;
 
@@ -92,49 +91,62 @@ int main_client(HWND hWnd) {
 	sockaddr.ai_protocol = IPPROTO_TCP;
 	sockaddr.ai_flags = AI_PASSIVE;
 
-	if (getaddrinfo(NULL, DEFAULT_PORT, &sockaddr, &hostinfo)) {
-		WSACleanup();
-		return 2;
-	}
+	if (getaddrinfo(NULL, DEFAULT_PORT, &sockaddr, &hostinfo)) return INVALID_SOCKET;
 
 	SOCKET MainSock = INVALID_SOCKET;
 	MainSock = socket(hostinfo->ai_family, hostinfo->ai_socktype, hostinfo->ai_protocol);
 	if (MainSock == INVALID_SOCKET) {
 		freeaddrinfo(hostinfo);
-		WSACleanup();
-		return 3;
+		return INVALID_SOCKET;
 	}
 
 	if (bind(MainSock, hostinfo->ai_addr, (int)hostinfo->ai_addrlen) == SOCKET_ERROR) {
 		freeaddrinfo(hostinfo);
 		closesocket(MainSock);
-		WSACleanup();
-		return 3;
+		return INVALID_SOCKET;
 	}
 
 	freeaddrinfo(hostinfo);
 
 	if (listen(MainSock, SOMAXCONN) == SOCKET_ERROR) {
 		closesocket(MainSock);
-		WSACleanup();
-		return 3;
+		return INVALID_SOCKET;
 	}
 
 	SOCKET ClientSock = INVALID_SOCKET;
 	ClientSock = accept(MainSock, NULL, NULL);
 	if (ClientSock == INVALID_SOCKET) {
 		closesocket(MainSock);
-		WSACleanup();
-		return 3;
+		return INVALID_SOCKET;
 	}
 
 	closesocket(MainSock);
 
 	if (shutdown(ClientSock, SD_SEND) == SOCKET_ERROR) {
 		closesocket(ClientSock);
-		WSACleanup();
-		return 3;
+		return INVALID_SOCKET;
 	}
+
+	return ClientSock;
+}
+
+SOCKET initSocket() {
+	WSADATA wsData;
+	if (WSAStartup(MAKEWORD(2, 2), &wsData)) {
+		return 1;
+	}
+
+	SOCKET ClientSock = connSocket();
+	if (ClientSock == INVALID_SOCKET) WSACleanup();
+
+	return ClientSock;
+}
+
+
+
+int main_client(HWND hWnd) {
+	SOCKET ClientSock = initSocket();
+	if (ClientSock == INVALID_SOCKET) return 1;
 
 	int sockstatus;
 	char keyName[6];
