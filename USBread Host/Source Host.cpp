@@ -119,7 +119,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			else { FillRect(hdc, &client, (HBRUSH)COLOR_WINDOW + 1); }
 			EndPaint(hWnd, &ps);
 
-			char winText[50];
+			char winText[75];
 			if (maxNum == 0) {
 				snprintf(winText, 75, "WIN Cebu Key Capture Host (No Slides)%s", sockStatus);
 				SetWindowTextA(hWnd, winText);
