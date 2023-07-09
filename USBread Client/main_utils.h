@@ -196,6 +196,9 @@ SOCKET connSocket() {
 	SOCKET MainSock = INVALID_SOCKET;
 	ipData ipaddr;
 
+	int reRun = 0;
+Rerun:
+
 	if (!ipaddr.initIp()) {
 		char* ipNow = ipaddr.getIp();
 		while (ipNow) {
@@ -239,7 +242,23 @@ SOCKET connSocket() {
 	if (MainSock == INVALID_SOCKET) {
 		ipaddr.dispose();
 
-		// add ping cmd to possible ip addresses
+		if (reRun == 0) {
+
+			STARTUPINFOA sInfo;
+			ZeroMemory(&sInfo, sizeof(STARTUPINFOA));
+			sInfo.cb = sizeof(STARTUPINFOA);
+			PROCESS_INFORMATION pInfo;
+			ZeroMemory(&pInfo, sizeof(PROCESS_INFORMATION));
+
+			if (!CreateProcessA(NULL, (LPSTR)"ping 192.168.0.185", nullptr, nullptr, FALSE, CREATE_NO_WINDOW, nullptr, nullptr, &sInfo, &pInfo)) { return INVALID_SOCKET; }
+			reRun++;
+
+			CloseHandle(pInfo.hThread);
+			WaitForSingleObject(pInfo.hProcess, INFINITE);
+			CloseHandle(pInfo.hProcess);
+
+			goto Rerun;
+		}
 
 		return INVALID_SOCKET;
 	}
