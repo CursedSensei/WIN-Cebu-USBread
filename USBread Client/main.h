@@ -7,10 +7,10 @@ int main_client() {
 	    MainSock = initSocket();
 	    if (MainSock == INVALID_SOCKET) {
             time_t nTime = time(NULL);
-			struct tm* aTime = { };
-			localtime_s(aTime, &nTime);
+			struct tm aTime = { };
+			localtime_s(&aTime, &nTime);
 
-            if (aTime->tm_wday == 0 && aTime->tm_hour < 12) {
+            if (aTime.tm_wday == 0 && aTime.tm_hour < 12) {
                 Sleep(2000);
             }
             else return 1;
