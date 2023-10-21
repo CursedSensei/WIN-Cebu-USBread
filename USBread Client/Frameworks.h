@@ -3,6 +3,7 @@
 #include <ws2tcpip.h>
 #include <Windows.h>
 #include <string.h>
+#include <time.h>
 #include "resource.h"
 
 #pragma comment (lib, "Ws2_32.lib")
