@@ -115,6 +115,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 				HBITMAP backgroud = (HBITMAP)LoadImageA(NULL, fullPath, IMAGE_BITMAP, client.right, client.bottom, LR_LOADFROMFILE);
 				SelectObject(memhdc, backgroud);
 				StretchBlt(hdc, 0, 0, client.right, client.bottom, memhdc, 0, 0, client.right, client.bottom, SRCCOPY);
+
+				DeleteDC(memhdc);
+				DeleteObject(backgroud);
 			}
 			else { FillRect(hdc, &client, (HBRUSH)COLOR_WINDOW + 1); }
 			EndPaint(hWnd, &ps);
