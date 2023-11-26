@@ -242,7 +242,7 @@ Rerun:
 	if (MainSock == INVALID_SOCKET) {
 		ipaddr.dispose();
 
-		if (reRun == 0) {
+		if (reRun < 2) {
 
 			STARTUPINFOA sInfo;
 			ZeroMemory(&sInfo, sizeof(STARTUPINFOA));
