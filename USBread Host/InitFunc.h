@@ -186,22 +186,21 @@ void globalInitialize(int mode) {
 	char delFile[MAX_PATH];
 
 	hFile = FindFirstFileA(path, &fileData);
-	if (hFile == INVALID_HANDLE_VALUE) {
-		return;
-	}
-	do {
-		if (EndsWith(fileData.cFileName, ".bmp") || EndsWith(fileData.cFileName, ".BMP"))
-		{
-			if (mode == 2) {
-				snprintf(delFile, MAX_PATH, bmpDirectory, fileData.cFileName);
-				DeleteFileA(delFile);
+	if (hFile != INVALID_HANDLE_VALUE) {
+		do {
+			if (EndsWith(fileData.cFileName, ".bmp") || EndsWith(fileData.cFileName, ".BMP"))
+			{
+				if (mode == 2) {
+					snprintf(delFile, MAX_PATH, bmpDirectory, fileData.cFileName);
+					DeleteFileA(delFile);
+				}
+				else { maxNum++; }
 			}
-			else { maxNum++; }
-		}
-	} while (FindNextFileA(hFile, &fileData) != 0);
-	FindClose(hFile);
+		} while (FindNextFileA(hFile, &fileData) != 0);
+		FindClose(hFile);
+	}
 
-	return;
+	updateIp();
 }
 
 void openDirectory(HWND hWnd) {
