@@ -316,7 +316,7 @@ Rerun:
 
 				if (*(int*)packet.data) {
 					char resolvedIp[21] = "ping ";
-					memset(resolvedIp + 5, 0, 21);
+					memset(resolvedIp + 5, 0, 21 - 5);
 
 					unsigned char resolvedIpLen = 5;
 

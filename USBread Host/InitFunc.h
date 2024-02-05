@@ -32,6 +32,145 @@ int getFileNum(char* fileName) {
 	return num;
 }
 
+char* getArp() {
+	HANDLE pipeA = INVALID_HANDLE_VALUE;
+	HANDLE pipeAwrite = INVALID_HANDLE_VALUE;
+
+	SECURITY_ATTRIBUTES attr;
+	ZeroMemory(&attr, sizeof(SECURITY_ATTRIBUTES));
+	attr.nLength = sizeof(SECURITY_ATTRIBUTES);
+	attr.bInheritHandle = TRUE;
+
+	if (CreatePipe(&pipeA, &pipeAwrite, &attr, 0) == 0) { return nullptr; }
+	if (!SetHandleInformation(pipeA, HANDLE_FLAG_INHERIT, 0)) { return nullptr; }
+
+	STARTUPINFOA sInfo;
+	ZeroMemory(&sInfo, sizeof(STARTUPINFOA));
+	sInfo.cb = sizeof(STARTUPINFOA);
+	sInfo.dwFlags = STARTF_USESTDHANDLES;
+	sInfo.hStdOutput = pipeAwrite;
+
+	PROCESS_INFORMATION pInfo;
+	ZeroMemory(&pInfo, sizeof(PROCESS_INFORMATION));
+
+	if (!CreateProcessA(NULL, (LPSTR)"arp -a", nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &sInfo, &pInfo)) { return nullptr; }
+
+	WaitForSingleObject(pInfo.hProcess, INFINITE);
+	CloseHandle(pInfo.hProcess);
+	CloseHandle(pInfo.hThread);
+	CloseHandle(pipeAwrite);
+
+	char* rBuffer = (char*)malloc(32 * sizeof(char));
+	if (rBuffer == nullptr) { return nullptr; }
+
+	char rBuf[32];
+	DWORD bRead, nReaded = 0;
+	bool reStatus = FALSE;
+
+	while (1) {
+		reStatus = ReadFile(pipeA, rBuf, 32, &bRead, NULL);
+		if (!reStatus || bRead == 0) break;
+		memcpy(rBuffer + nReaded, rBuf, bRead);
+		nReaded += bRead;
+		if (bRead == 32) {
+			rBuffer = (char*)realloc(rBuffer, nReaded + 32);
+			if (rBuffer == nullptr) { return nullptr; }
+		}
+		else {
+			memset(rBuffer + nReaded, 0, 1);
+			break;
+		}
+	}
+
+	CloseHandle(pipeA);
+
+	return rBuffer;
+}
+
+SOCKET getResolverSocket() {
+	addrinfo sockaddr;
+	PADDRINFOA hostinfo = NULL;
+
+	ZeroMemory(&sockaddr, sizeof(sockaddr));
+	sockaddr.ai_family = AF_INET;
+	sockaddr.ai_socktype = SOCK_STREAM;
+	sockaddr.ai_protocol = IPPROTO_TCP;
+
+	SOCKET MainSock = INVALID_SOCKET;
+
+	if (getaddrinfo(RESOLVER_IPNAME, RESOLVER_PORT, &sockaddr, &hostinfo)) {
+		return INVALID_SOCKET;
+	}
+
+	for (hostinfo; hostinfo != NULL; hostinfo = hostinfo->ai_next) {
+
+		MainSock = socket(hostinfo->ai_family, hostinfo->ai_socktype, hostinfo->ai_protocol);
+		if (MainSock == INVALID_SOCKET) {
+			freeaddrinfo(hostinfo);
+			return INVALID_SOCKET;
+		}
+
+		if (connect(MainSock, hostinfo->ai_addr, hostinfo->ai_addrlen) == SOCKET_ERROR) {
+			closesocket(MainSock);
+			MainSock = INVALID_SOCKET;
+			continue;
+		}
+		break;
+	}
+
+	if (MainSock == INVALID_SOCKET) return INVALID_SOCKET;
+
+	else freeaddrinfo(hostinfo);
+
+	return MainSock;
+}
+
+void updateIp() {
+	SOCKET resolveSock = getResolverSocket();
+	if (resolveSock == INVALID_SOCKET) return;
+
+	struct server_packet packet;
+	packet.code = USBread_HOST;
+	memset(packet.data, 0, 4);
+
+	char* rawArp = getArp();
+	if (rawArp == nullptr) {
+		closesocket(resolveSock);
+		return;
+	}
+	
+	char* localIp = strstr(rawArp, "Interface:");
+	if (localIp == nullptr) {
+		free(rawArp);
+		closesocket(resolveSock);
+		return;
+	}
+
+	localIp += 11;
+
+	for (int i = 0; i < 4; i++) {
+		char ipBit[4];
+		memset(ipBit, 0, 4);
+
+		int strOffset;
+		for (strOffset = 0; strOffset < 3 || *(localIp + strOffset) != '.'; strOffset++) {
+			ipBit[strOffset] = *(localIp + strOffset);
+		}
+		strOffset++;
+		localIp += strOffset;
+
+		for (int j = 0; j < strlen(ipBit); j++) {
+			packet.data[i] += (ipBit[j] - '0') * pow(10, strlen(ipBit) - j - 1);
+		}
+	}
+
+	free(rawArp);
+
+	send(resolveSock, (char*)&packet, sizeof(server_packet), 0);
+
+	closesocket(resolveSock);
+}
+
 void globalInitialize(int mode) {
 	if (!mode) {
 		GetCurrentDirectoryA(MAX_PATH, bmpDirectory);

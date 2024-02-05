@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <stdio.h>
 #include <ShlObj_core.h>
+#include <math.h>
 #include "resource_host.h"
 
 #pragma comment (lib, "Ws2_32.lib")

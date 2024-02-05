@@ -12,4 +12,4 @@ enum server_code {
 struct server_packet {
     unsigned char code;
     unsigned char data[4];
-}
+};
