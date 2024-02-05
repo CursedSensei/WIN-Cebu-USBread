@@ -12,3 +12,5 @@
 #define DEFAULT_PORT "28771"
 
 int main_exitcall = 1;
+
+#include "../USBread_codes.h"
