@@ -38,13 +38,13 @@ int main() {
     memset(ip, 0, 4);
 
     while (1) {
+        memset(&packet, 0, sizeof(struct server_packet));
+
         SOCKET clientSock = connect(listenerSock, NULL, NULL);
         if (isInvalid(clientSock)) {
             close(clientSock);
             continue;
         }
-
-        struct server_packet packet;
 
         if (recv(clientSock, (void *)&packet, sizeof(struct server_packet), 0) == -1) {
             close(clientSock);
