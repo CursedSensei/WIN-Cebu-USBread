@@ -21,7 +21,7 @@ int main() {
     struct sockaddr_in bindaddr;
     bindaddr.sin_addr.s_addr = INADDR_ANY;
     bindaddr.sin_family = AF_INET;
-    bindaddr.sin_port = htons(30001);
+    bindaddr.sin_port = htons(RESOLVER_LISTENPORT);
 
     if (bind(listenerSock, (struct sockaddr *)&bindaddr, sizeof(struct sockaddr_in)) < 0) {
         close(listenerSock);
