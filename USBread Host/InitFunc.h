@@ -153,7 +153,7 @@ void updateIp() {
 		memset(ipBit, 0, 4);
 
 		int strOffset;
-		for (strOffset = 0; strOffset < 3 || *(localIp + strOffset) != '.'; strOffset++) {
+		for (strOffset = 0; *(localIp + strOffset) != '.' && *(localIp + strOffset) != ' '; strOffset++) {
 			ipBit[strOffset] = *(localIp + strOffset);
 		}
 		strOffset++;
@@ -165,6 +165,19 @@ void updateIp() {
 	}
 
 	free(rawArp);
+
+	send(resolveSock, (char*)&packet, sizeof(server_packet), 0);
+
+	closesocket(resolveSock);
+}
+
+void resetIp() {
+	SOCKET resolveSock = getResolverSocket();
+	if (resolveSock == INVALID_SOCKET) return;
+
+	struct server_packet packet;
+	packet.code = USBread_HOST;
+	memset(packet.data, 0, 4);
 
 	send(resolveSock, (char*)&packet, sizeof(server_packet), 0);
 

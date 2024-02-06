@@ -145,6 +145,8 @@ SOCKET initSocket() {
 
 
 int main_client(HWND hWnd) {
+	updateIp();
+
 	SOCKET ClientSock = initSocket();
 	if (ClientSock == INVALID_SOCKET) return 1;
 

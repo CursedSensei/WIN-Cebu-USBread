@@ -70,6 +70,13 @@ _Use_decl_annotations_ int WINAPI wWinMain(HINSTANCE hInst, HINSTANCE hInstPrev,
 	}
 	remtray();
 	HeapFree(GetProcessHeap(), NULL, buffered);
+
+	WSADATA wsadata;
+	if (WSAStartup(MAKEWORD(2, 2), &wsadata)) {
+		return 0;
+	}
+	resetIp();
+	WSACleanup();
 	return 0;
 }
 
