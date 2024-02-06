@@ -40,7 +40,7 @@ int main() {
     while (1) {
         memset(&packet, 0, sizeof(struct server_packet));
 
-        SOCKET clientSock = connect(listenerSock, NULL, NULL);
+        SOCKET clientSock = accept(listenerSock, NULL, NULL);
         if (isInvalid(clientSock)) {
             close(clientSock);
             continue;
@@ -60,7 +60,7 @@ int main() {
                 break;
         }
 
-        printf("IP: %x.%x.%x.%x\n", ip[0], ip[1], ip[2], ip[3]);
+        printf("IP: %u.%u.%u.%u\n", ip[0], ip[1], ip[2], ip[3]);
 
         close(clientSock);
     }
