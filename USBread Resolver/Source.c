@@ -60,6 +60,8 @@ int main() {
                 break;
         }
 
+        printf("IP: %x.%x.%x.%x\n", ip[0], ip[1], ip[2], ip[3]);
+
         close(clientSock);
     }
 
