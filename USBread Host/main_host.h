@@ -54,31 +54,6 @@ void unpauseKey(HWND hWnd) {
 	return;
 }
 
-int checkKey(char* key) {
-	char buf[6];
-	int status = 0;
-
-	strcpy_s(buf, "Right");
-	for (int i = 0; buf[i] != NULL; i++) {
-		if (key[i] != buf[i]) {
-			status = 1;
-			break;
-		}
-	}
-	if (status == 0) { return 1; }
-	else { status = 0; }
-
-	strcpy_s(buf, "Left ");
-	for (int i = 0; buf[i] != NULL; i++) {
-		if (key[i] != buf[i]) {
-			status = 1;
-			break;
-		}
-	}
-	if (status == 0) { return 2; }
-	else { return 0; }
-}
-
 
 
 SOCKET connSocket() {
@@ -151,7 +126,7 @@ int main_client(HWND hWnd) {
 	if (ClientSock == INVALID_SOCKET) return 1;
 
 	int sockstatus;
-	char keyName[6];
+	char keyName;
 	int keyId;
 
 	modtray(1);
@@ -162,15 +137,14 @@ int main_client(HWND hWnd) {
 	do {
 		if (!main_exitcall) { break; }
 
-		sockstatus = recv(ClientSock, keyName, 6, 0);
+		sockstatus = recv(ClientSock, &keyName, 1, 0);
 		if (sockstatus > 0) {
 			if (main_exitcall == 2) { continue; }
 
-			keyId = checkKey(keyName);
-			if (keyId == 1) {
+			if (keyName == USBread_RIGHT) {
 				PostMessage(hWnd, WM_KEYDOWN, VK_RIGHT, 0);
 			}
-			else if (keyId == 2) {
+			else if (keyName == USBread_LEFT) {
 				PostMessage(hWnd, WM_KEYDOWN, VK_LEFT, 0);
 			}
 			else { continue; }

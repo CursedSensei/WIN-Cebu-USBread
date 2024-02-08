@@ -30,17 +30,17 @@ int main_client() {
 	modtray();
 
 	int queueKey;
-	char keyName[6];
+	char keyName;
 	int Nullsend = 0;
 
 	while (main_exitcall) {
 		queueKey = keyQueue->get();
 		if (queueKey != 0 || Nullsend > 100) {
-			if (queueKey == 1) { strcpy_s(keyName,"Right"); }
-			else if (queueKey == 2) { strcpy_s(keyName,"Left "); }
-			else { strcpy_s(keyName, "NONE "); }
+			if (queueKey == 1) keyName = USBread_RIGHT;
+			else if (queueKey == 2) keyName = USBread_LEFT;
+			else keyName = 0;
 
-			if (send(MainSock, keyName, strlen(keyName), 0) == SOCKET_ERROR) {
+			if (send(MainSock, &keyName, 1, 0) == SOCKET_ERROR) {
 				main_exitcall = 0;
 				closesocket(MainSock);
 				WSACleanup();

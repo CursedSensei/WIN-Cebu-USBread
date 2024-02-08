@@ -4,9 +4,19 @@
 #define RESOLVER_PORT "30003"
 #define RESOLVER_LISTENPORT 30003
 
+enum key_codes {
+    USBread_LEFT = 1,
+    USBread_RIGHT
+};
+
 enum server_code {
     USBread_HOST = 0x2,
     USBread_CLIENT,
+    
+    USBread_YOUTH,
+
+    USBread_INCOMP,
+    USBread_COMP
 };
 
 struct server_packet {
