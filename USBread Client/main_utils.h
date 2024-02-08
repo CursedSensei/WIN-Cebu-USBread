@@ -321,8 +321,10 @@ Rerun:
 					unsigned char resolvedIpLen = 5;
 
 					for (int i = 0; i < 4; i++) {
+						unsigned char reverseIpVar = resolvedIpLen;
 						do {
-							resolvedIp[resolvedIpLen++] = (packet.data[i] % 10) + '0';
+							for (int j = resolvedIpLen++; j > reverseIpVar; j--) resolvedIp[j] = resolvedIp[j - 1];
+							resolvedIp[reverseIpVar] = (packet.data[i] % 10) + '0';
 							packet.data[i] = packet.data[i] / 10;
 						} while (packet.data[i] != 0);
 
