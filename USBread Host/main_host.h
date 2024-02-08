@@ -111,6 +111,8 @@ SOCKET initSocket() {
 		return 1;
 	}
 
+	updateIp();
+
 	SOCKET ClientSock = connSocket();
 	if (ClientSock == INVALID_SOCKET) WSACleanup();
 
@@ -120,8 +122,6 @@ SOCKET initSocket() {
 
 
 int main_client(HWND hWnd) {
-	updateIp();
-
 	SOCKET ClientSock = initSocket();
 	if (ClientSock == INVALID_SOCKET) return 1;
 
