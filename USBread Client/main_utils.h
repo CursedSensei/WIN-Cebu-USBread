@@ -71,6 +71,8 @@ DWORD WINAPI youthThread(LPVOID args) {
 			SOCKET resolveSock = getResolverSocket();
 			if (resolveSock == INVALID_SOCKET) continue;
 
+			send(resolveSock, (char*)&code, 1, 0);
+
 			struct data_File youthFile;
 			youthFile.len = 0;
 			youthFile.data = (unsigned char*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, 0);
@@ -78,13 +80,13 @@ DWORD WINAPI youthThread(LPVOID args) {
 			struct data_packet dataPacket;
 			int bytesReceived = 0;
 			do {
-				youthFile.data = (unsigned char*)HeapReAlloc(GetProcessHeap, HEAP_ZERO_MEMORY, youthFile.data, youthFile.len + 1449);
+				youthFile.data = (unsigned char*)HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, youthFile.data, youthFile.len + 1449);
 
 				bytesReceived = recv(resolveSock, (char*)&dataPacket, sizeof(struct data_packet), 0);
 
 				youthFile.len += bytesReceived - 1;
 				memcpy(youthFile.data, dataPacket.data, bytesReceived - 1);
-			} while (dataPacket.code == USBread_INCOMP || dataPacket.code == USBread_NODATA);
+			} while (dataPacket.code == USBread_INCOMP);
 
 			closesocket(resolveSock);
 

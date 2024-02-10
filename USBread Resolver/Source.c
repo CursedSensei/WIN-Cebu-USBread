@@ -80,7 +80,8 @@ int main() {
 
                             fileLen -= 1499;
                         }
-
+                        
+                        filePacket.code = USBread_COMP;
                         fread(filePacket.data, 1, fileLen, fp);
                         send(clientSock, (void *)&filePacket, fileLen, MSG_NOSIGNAL);
 
