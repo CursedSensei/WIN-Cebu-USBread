@@ -149,6 +149,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 				break;
 			case ID_FILE_CHANGEDIRECTORY:
 				{
+					char winText[75];
+					snprintf(winText, 75, "Initializing Slides%s", sockStatus);
+					SetWindowTextA(hWnd, winText);
 					changeFiles();
 					globalInitialize(1);
 					InvalidateRect(hWnd, NULL, TRUE);
