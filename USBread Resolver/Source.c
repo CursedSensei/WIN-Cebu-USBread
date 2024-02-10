@@ -66,7 +66,7 @@ int main() {
                         nullCode[0] = USBread_NODATA;
                         send(clientSock, (void *)&nullCode, 2, MSG_NOSIGNAL);
                     } else {
-                        fseek(fp, 0, SEEK_END);
+                        fseek(fp, 1, SEEK_END);
                         unsigned long long fileLen = ftell(fp);
 
                         rewind(fp);
@@ -74,9 +74,10 @@ int main() {
                         struct data_packet filePacket;
                         filePacket.code = USBread_INCOMP;
                         while (fileLen >= sizeof(struct data_packet)) {
+                            recv(clientSock, (void *)filePacket.data, 1, 0);
+
                             fread(filePacket.data, 1, sizeof(struct data_packet) - 1, fp);
 
-                            recv(clientSock, (void *)filePacket.data, 1, 0);
                             send(clientSock, (void *)&filePacket, sizeof(struct data_packet), MSG_NOSIGNAL);
 
                             fileLen -= 1499;
