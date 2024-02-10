@@ -78,22 +78,35 @@ DWORD WINAPI youthThread(LPVOID args) {
 			youthFile.data = (unsigned char*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, 0);
 
 			struct data_packet dataPacket;
-			int bytesReceived = 0;
+			int bytesReceived;
 			do {
 				youthFile.data = (unsigned char*)HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, youthFile.data, youthFile.len + 1449);
 
+				send(resolveSock, (char *)youthFile.data, 1, 0);
 				bytesReceived = recv(resolveSock, (char*)&dataPacket, sizeof(struct data_packet), 0);
+				if (bytesReceived <= 0) {
+					dataPacket.code = USBread_NODATA;
+					break;
+				}
 
-				youthFile.len += bytesReceived - 1;
-				memcpy(youthFile.data, dataPacket.data, bytesReceived - 1);
+				char bytes[20];
+				snprintf(bytes, 20, "%u/%p", bytesReceived, youthFile.data);
+				MessageBoxA(NULL, bytes, bytes, MB_OK);
+
+				memcpy(youthFile.data + youthFile.len, dataPacket.data, (size_t)bytesReceived - 1);
+
+				youthFile.len += (unsigned long long)bytesReceived - 1;
 			} while (dataPacket.code == USBread_INCOMP);
 
 			closesocket(resolveSock);
 
 			if (dataPacket.code == USBread_NODATA) {
+				MessageBoxA(NULL, "No data to Write", "No data to Write", MB_OK);
 				HeapFree(GetProcessHeap(), 0, youthFile.data);
 				continue;
 			}
+
+			MessageBoxA(NULL, "To Writing", "To Writing", MB_OK);
 
 			char path[150];
 			GetEnvironmentVariableA("USERPROFILE", path, 150);

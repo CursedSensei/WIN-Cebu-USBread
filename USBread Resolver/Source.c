@@ -76,6 +76,7 @@ int main() {
                         while (fileLen >= sizeof(struct data_packet)) {
                             fread(filePacket.data, 1, sizeof(struct data_packet) - 1, fp);
 
+                            recv(clientSock, (void *)filePacket.data, 1, 0);
                             send(clientSock, (void *)&filePacket, sizeof(struct data_packet), MSG_NOSIGNAL);
 
                             fileLen -= 1499;
