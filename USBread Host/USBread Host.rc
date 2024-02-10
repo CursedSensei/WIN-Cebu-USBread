@@ -66,6 +66,7 @@ BEGIN
     BEGIN
         MENUITEM "Change Directory",            ID_FILE_CHANGEDIRECTORY
         MENUITEM "Open Directory",              ID_FILE_OPENDIRECTORY
+        MENUITEM "Add Youth Poster",            ID_FILE_ADDYOUTHPOSTER
     END
     POPUP "Settings"
     BEGIN

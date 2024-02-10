@@ -157,6 +157,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 					InvalidateRect(hWnd, NULL, TRUE);
 				}
 				break;
+			case ID_FILE_ADDYOUTHPOSTER:
+				{
+					if (ClientSock != INVALID_SOCKET) {
+						unsigned char code = USBread_YOUTH;
+						send(ClientSock, (char*)&code, 1, 0);
+					}
+				}
+				break;
 			case ID_SETTINGS_PAUSE:
 				{
 					if (main_exitcall == 2) {

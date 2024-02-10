@@ -13,3 +13,5 @@
 #define DEFAULT_PORT "28771"
 
 #include "../USBread_codes.h"
+
+SOCKET ClientSock = INVALID_SOCKET;

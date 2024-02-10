@@ -33,6 +33,7 @@
     <ResourceCompile Include="USBread Host.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\USBread Client\displayico.ico" />
     <Image Include="..\USBread\displayico.ico" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

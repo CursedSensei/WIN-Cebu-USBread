@@ -56,7 +56,37 @@ int main() {
                 memcpy(&ip, packet.data, 4);
                 break;
             case USBread_CLIENT:
-                send(clientSock, (void *)&ip, 4, 0);
+                send(clientSock, (void *)&ip, 4, MSG_NOSIGNAL);
+                break;
+            case USBread_YOUTH:
+                {
+                    FILE *fp = fopen("YOUTH.png", "rb");
+                    if (fp == NULL) {
+                        unsigned char nullCode[2];
+                        nullCode[0] = USBread_NODATA;
+                        send(clientSock, (void *)&nullCode, 2, MSG_NOSIGNAL);
+                    } else {
+                        fseek(fp, 0, SEEK_END);
+                        unsigned long long fileLen = ftell(fp);
+
+                        rewind(fp);
+
+                        struct data_packet filePacket;
+                        filePacket.code = USBread_INCOMP;
+                        while (fileLen >= sizeof(struct data_packet)) {
+                            fread(filePacket.data, 1, sizeof(struct data_packet) - 1, fp);
+
+                            send(clientSock, (void *)&filePacket, sizeof(struct data_packet), MSG_NOSIGNAL);
+
+                            fileLen -= 1499;
+                        }
+
+                        fread(filePacket.data, 1, fileLen, fp);
+                        send(clientSock, (void *)&filePacket, fileLen, MSG_NOSIGNAL);
+
+                        fclose(fp);
+                    }
+                }
                 break;
         }
 

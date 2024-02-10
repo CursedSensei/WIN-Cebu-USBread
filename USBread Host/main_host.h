@@ -122,7 +122,7 @@ SOCKET initSocket() {
 
 
 int main_client(HWND hWnd) {
-	SOCKET ClientSock = initSocket();
+	ClientSock = initSocket();
 	if (ClientSock == INVALID_SOCKET) return 1;
 
 	int sockstatus;
@@ -176,6 +176,7 @@ DWORD WINAPI client_thread(LPVOID args) {
 		status = main_client(*(HWND*)args);
 		main_exitcall = 3;
 		modtray(2);
+		ClientSock = INVALID_SOCKET;
 		InvalidateRect(*(HWND*)args, NULL, TRUE);
 	}
 

@@ -16,10 +16,22 @@ enum server_code {
     USBread_YOUTH,
 
     USBread_INCOMP,
-    USBread_COMP
+    USBread_COMP,
+    USBread_NODATA,
 };
 
 struct server_packet {
     unsigned char code;
     unsigned char data[4];
+};
+
+struct data_packet {
+    unsigned char code;
+
+    unsigned char data[1499];
+};
+
+struct data_File {
+    unsigned long long len;
+    unsigned char *data;
 };

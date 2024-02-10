@@ -48,5 +48,8 @@
     <Image Include="..\USBread\displayico.ico">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="..\USBread Client\displayico.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>
