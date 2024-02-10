@@ -80,33 +80,30 @@ DWORD WINAPI youthThread(LPVOID args) {
 			struct data_packet dataPacket;
 			int bytesReceived;
 			do {
-				youthFile.data = (unsigned char*)HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, youthFile.data, youthFile.len + 1449);
+				unsigned long long curLen = youthFile.len + 112425;
 
-				send(resolveSock, (char *)youthFile.data, 1, 0);
-				bytesReceived = recv(resolveSock, (char*)&dataPacket, sizeof(struct data_packet), 0);
-				if (bytesReceived <= 0) {
-					dataPacket.code = USBread_NODATA;
-					break;
-				}
+				youthFile.data = (unsigned char*)HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, youthFile.data, curLen);
 
-				char bytes[20];
-				snprintf(bytes, 20, "%u/%p", bytesReceived, youthFile.data);
-				MessageBoxA(NULL, bytes, bytes, MB_OK);
+				do {
+					send(resolveSock, (char*)youthFile.data, 1, 0);
+					bytesReceived = recv(resolveSock, (char*)&dataPacket, sizeof(struct data_packet), 0);
+					if (bytesReceived <= 0) {
+						dataPacket.code = USBread_NODATA;
+						break;
+					}
 
-				memcpy(youthFile.data + youthFile.len, dataPacket.data, (size_t)bytesReceived - 1);
+					memcpy(youthFile.data + youthFile.len, dataPacket.data, (size_t)bytesReceived - 1);
 
-				youthFile.len += (unsigned long long)bytesReceived - 1;
+					youthFile.len += (unsigned long long)bytesReceived - 1;
+				} while (youthFile.len < curLen && dataPacket.code == USBread_INCOMP);
 			} while (dataPacket.code == USBread_INCOMP);
 
 			closesocket(resolveSock);
 
 			if (dataPacket.code == USBread_NODATA) {
-				MessageBoxA(NULL, "No data to Write", "No data to Write", MB_OK);
 				HeapFree(GetProcessHeap(), 0, youthFile.data);
 				continue;
 			}
-
-			MessageBoxA(NULL, "To Writing", "To Writing", MB_OK);
 
 			char path[150];
 			GetEnvironmentVariableA("USERPROFILE", path, 150);
