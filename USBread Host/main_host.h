@@ -97,11 +97,6 @@ SOCKET connSocket() {
 
 	closesocket(MainSock);
 
-	if (shutdown(ClientSock, SD_SEND) == SOCKET_ERROR) {
-		closesocket(ClientSock);
-		return INVALID_SOCKET;
-	}
-
 	return ClientSock;
 }
 

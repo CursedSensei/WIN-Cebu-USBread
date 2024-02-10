@@ -402,11 +402,6 @@ Rerun:
 		return INVALID_SOCKET;
 	}
 
-	if (shutdown(MainSock, SD_RECEIVE) == SOCKET_ERROR) {
-		closesocket(MainSock);
-		return INVALID_SOCKET;
-	}
-
 	return MainSock;
 }
 

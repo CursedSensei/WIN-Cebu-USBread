@@ -27,12 +27,13 @@ int main_client() {
 		WSACleanup();
 		return 3;
 	}
-	CloseHandle(youthSock);
+	CloseHandle(youthHandle);
 
 	queue *keyQueue = (queue *)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(queue));
 	HANDLE keyhandle = CreateThread(NULL, 0, keyThread, (void*)keyQueue, 0, NULL);
 	if (!keyhandle) {
 		closesocket(MainSock);
+		HeapFree(GetProcessHeap(), NULL, keyQueue);
 		WSACleanup();
 		return 3;
 	}
