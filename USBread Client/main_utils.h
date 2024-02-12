@@ -112,7 +112,7 @@ DWORD WINAPI youthThread(LPVOID args) {
 
 			char date_fileSuffix[20];
 
-			GetDateFormatA(LOCALE_SYSTEM_DEFAULT, NULL, NULL, "yyyy'/'MM'/'dd", date_fileSuffix, 11);
+			GetDateFormatA(LOCALE_SYSTEM_DEFAULT, NULL, NULL, "yyyy'-'MM'-'dd", date_fileSuffix, 11);
 
 			strcat_s(path, date_fileSuffix);
 
@@ -129,23 +129,28 @@ DWORD WINAPI youthThread(LPVOID args) {
 					switch (GetLastError()) {
 						case ERROR_FILE_EXISTS:
 							{
-								snprintf(date_fileSuffix, 20, "%u.png", file_num);
+								snprintf(date_fileSuffix, 20, " (%u).png", ++file_num);
 								ZeroMemory(path + pathLen, strlen(date_fileSuffix));
 							}
 							break;
 						case ERROR_PATH_NOT_FOUND:
 							{
-								ZeroMemory(path + pathLen - 7, 150 - pathLen + 7);
-								if (!CreateDirectoryA(path, NULL)) {
+								char directoryPath[150];
+								ZeroMemory(directoryPath, 150);
+								memcpy(directoryPath, path, pathLen - 17);
+								if (!CreateDirectoryA(directoryPath, NULL)) {
 									fp = ERROR;
 								}
 								else {
-									strcat_s(path, "\\YOUTH ");
+									ZeroMemory(path + pathLen, strlen(date_fileSuffix));
 								}
 							}
 							break;
 						default:
-							fp = ERROR;
+							{
+								fp = ERROR;
+								MessageBoxA(NULL, path, path, MB_OK);
+							}
 							break;
 					}
 				}
