@@ -108,13 +108,56 @@ DWORD WINAPI youthThread(LPVOID args) {
 			char path[150];
 			GetEnvironmentVariableA("USERPROFILE", path, 150);
 
-			strcat_s(path, "\\Desktop\\YOUTH.png");
+			strcat_s(path, "\\Desktop\\Youth Posters\\YOUTH ");
 
-			FILE* fp;
-			if (!fopen_s(&fp, path, "wb")) {
-				fwrite(youthFile.data, 1, youthFile.len, fp);
-				fclose(fp);
-			}
+			char date_fileSuffix[20];
+
+			GetDateFormatA(LOCALE_SYSTEM_DEFAULT, NULL, NULL, "yyyy'/'MM'/'dd", date_fileSuffix, 11);
+
+			strcat_s(path, date_fileSuffix);
+
+			unsigned short pathLen = strlen(path);
+			unsigned short file_num = 0;
+			strcpy_s(date_fileSuffix, ".png");
+			ZeroMemory(date_fileSuffix + 5, 6);
+			HANDLE fp;
+			do {
+				strcat_s(path, date_fileSuffix);
+
+				fp = CreateFileA(path, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+				if (fp == INVALID_HANDLE_VALUE) {
+					switch (GetLastError()) {
+						case ERROR_FILE_EXISTS:
+							{
+								snprintf(date_fileSuffix, 20, "%u.png", file_num);
+								ZeroMemory(path + pathLen, strlen(date_fileSuffix));
+							}
+							break;
+						case ERROR_PATH_NOT_FOUND:
+							{
+								ZeroMemory(path + pathLen - 7, 150 - pathLen + 7);
+								if (!CreateDirectoryA(path, NULL)) {
+									fp = ERROR;
+								}
+								else {
+									strcat_s(path, "\\YOUTH ");
+								}
+							}
+							break;
+						default:
+							fp = ERROR;
+							break;
+					}
+				}
+				else {
+					DWORD written = 0;
+
+					WriteFile(fp, youthFile.data, youthFile.len, &written, NULL);
+
+					CloseHandle(fp);
+				}
+			} while (fp == INVALID_HANDLE_VALUE);
+
 			HeapFree(GetProcessHeap(), 0, youthFile.data);
 		}
 	}
