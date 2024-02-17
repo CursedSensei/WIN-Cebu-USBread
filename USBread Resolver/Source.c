@@ -60,7 +60,7 @@ int main() {
                 break;
             case USBread_YOUTH:
                 {
-                    FILE *fp = fopen("YOUTH.png", "rb");
+                    FILE *fp = fopen("/home/aoi/Desktop/ElquencePage/WinPage/YOUTH.png", "rb");
                     if (fp == NULL) {
                         unsigned char nullCode[2];
                         nullCode[0] = USBread_NODATA;
