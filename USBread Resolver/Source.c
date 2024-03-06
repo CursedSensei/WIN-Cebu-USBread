@@ -3,17 +3,29 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 
 #define SOCKET int
 
 #include "../USBread_codes.h"
+
+volatile unsigned char keepRunning = 1;
+SOCKET listenerSock;
+
+void cleanup(int dumm) {
+    close(listenerSock);
+    keepRunning = 0;
+}
 
 int isInvalid(SOCKET socket) {
     return socket < 0 ? 1 : 0;
 }
 
 int main() {
-    SOCKET listenerSock = socket(AF_INET, SOCK_STREAM, 0);
+    signal(SIGINT, cleanup);
+    signal(SIGTERM, cleanup);
+
+    listenerSock = socket(AF_INET, SOCK_STREAM, 0);
     if (isInvalid(listenerSock)) {
         return 1;
     }
@@ -37,7 +49,7 @@ int main() {
     struct server_packet packet;
     memset(ip, 0, 4);
 
-    while (1) {
+    while (keepRunning) {
         memset(&packet, 0, sizeof(struct server_packet));
 
         SOCKET clientSock = accept(listenerSock, NULL, NULL);
@@ -97,7 +109,5 @@ int main() {
 
         close(clientSock);
     }
-
-    close(listenerSock);
     return 0;
 }
