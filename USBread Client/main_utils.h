@@ -27,6 +27,11 @@ public:
 
 };
 
+struct youthArgs {
+	SOCKET mainSock;
+	queue* queueList;
+};
+
 DWORD WINAPI keyThread(LPVOID args) {
 	int Rbuffer = 0;
 	int PGRbuffer = 0;
@@ -62,14 +67,18 @@ DWORD WINAPI keyThread(LPVOID args) {
 SOCKET getResolverSocket();
 
 DWORD WINAPI youthThread(LPVOID args) {
-	SOCKET MainSock = *(SOCKET*)args;
+	SOCKET MainSock = ((youthArgs *)args)->mainSock;
+	queue* keyQueue = ((youthArgs *)args)->queueList;
 	HeapFree(GetProcessHeap(), 0, args);
 
 	unsigned char code;
 	while (recv(MainSock, (char*)&code, 1, 0) > 0) {
 		if (code == USBread_YOUTH) {
 			SOCKET resolveSock = getResolverSocket();
-			if (resolveSock == INVALID_SOCKET) continue;
+			if (resolveSock == INVALID_SOCKET) {
+				keyQueue->append(4);
+				continue;
+			}
 
 			send(resolveSock, (char*)&code, 1, 0);
 
@@ -102,6 +111,7 @@ DWORD WINAPI youthThread(LPVOID args) {
 
 			if (dataPacket.code == USBread_NODATA) {
 				HeapFree(GetProcessHeap(), 0, youthFile.data);
+				keyQueue->append(5);
 				continue;
 			}
 
@@ -149,7 +159,6 @@ DWORD WINAPI youthThread(LPVOID args) {
 						default:
 							{
 								fp = ERROR;
-								MessageBoxA(NULL, path, path, MB_OK);
 							}
 							break;
 					}
@@ -164,6 +173,9 @@ DWORD WINAPI youthThread(LPVOID args) {
 			} while (fp == INVALID_HANDLE_VALUE);
 
 			HeapFree(GetProcessHeap(), 0, youthFile.data);
+
+			if (fp == ERROR) keyQueue->append(4);
+			else keyQueue->append(3);
 		}
 	}
 

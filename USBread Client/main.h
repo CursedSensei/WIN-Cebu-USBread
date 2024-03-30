@@ -18,22 +18,24 @@ int main_client() {
         else break;
     }
 
-	SOCKET *youthSock = (SOCKET*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(SOCKET));
-	*youthSock = MainSock;
-	HANDLE youthHandle = CreateThread(NULL, 0, youthThread, (void*)youthSock, 0, NULL);
+	queue* keyQueue = (queue*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(queue));
+	youthArgs* youthparam = (youthArgs*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(youthArgs));
+	youthparam->mainSock = MainSock;
+	youthparam->queueList = keyQueue;
+
+	HANDLE youthHandle = CreateThread(NULL, 0, youthThread, (void*)youthparam, 0, NULL);
 	if (!youthHandle) {
 		closesocket(MainSock);
-		HeapFree(GetProcessHeap(), NULL, youthSock);
+		HeapFree(GetProcessHeap(), NULL, youthparam);
+		HeapFree(GetProcessHeap(), NULL, keyQueue);
 		WSACleanup();
 		return 3;
 	}
 	CloseHandle(youthHandle);
 
-	queue *keyQueue = (queue *)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(queue));
 	HANDLE keyhandle = CreateThread(NULL, 0, keyThread, (void*)keyQueue, 0, NULL);
 	if (!keyhandle) {
 		closesocket(MainSock);
-		HeapFree(GetProcessHeap(), NULL, keyQueue);
 		WSACleanup();
 		return 3;
 	}
@@ -50,6 +52,9 @@ int main_client() {
 		if (queueKey != 0 || Nullsend > 100) {
 			if (queueKey == 1) keyName = USBread_RIGHT;
 			else if (queueKey == 2) keyName = USBread_LEFT;
+			else if (queueKey == 3) keyName = USBread_SUCCESS;
+			else if (queueKey == 4) keyName = USBread_ERROR;
+			else if (queueKey == 5) keyName = USBread_NODATA;
 			else keyName = 0;
 
 			if (send(MainSock, &keyName, 1, 0) == SOCKET_ERROR) {

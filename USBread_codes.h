@@ -6,7 +6,10 @@
 
 enum key_codes {
     USBread_LEFT = 1,
-    USBread_RIGHT
+    USBread_RIGHT,
+
+    USBread_SUCCESS,
+    USBread_ERROR
 };
 
 enum server_code {
@@ -17,7 +20,7 @@ enum server_code {
 
     USBread_INCOMP,
     USBread_COMP,
-    USBread_NODATA,
+    USBread_NODATA
 };
 
 struct server_packet {
