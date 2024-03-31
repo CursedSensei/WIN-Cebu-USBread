@@ -163,6 +163,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 						unsigned char code = USBread_YOUTH;
 						send(ClientSock, (char*)&code, 1, 0);
 					}
+					else {
+						notiftray("Not connected to Client");
+					}
 				}
 				break;
 			case ID_SETTINGS_PAUSE:

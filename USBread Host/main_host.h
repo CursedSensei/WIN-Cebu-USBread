@@ -89,11 +89,45 @@ SOCKET connSocket() {
 	}
 
 	SOCKET ClientSock = INVALID_SOCKET;
-	ClientSock = accept(MainSock, NULL, NULL);
-	if (ClientSock == INVALID_SOCKET) {
-		closesocket(MainSock);
-		return INVALID_SOCKET;
-	}
+	do {
+		ClientSock = accept(MainSock, NULL, NULL);
+		if (ClientSock == INVALID_SOCKET) {
+			break;
+		}
+
+		unsigned long long pass = 0;
+
+		if (recv(ClientSock, (char*)&pass, 1, 0) <= 0) {
+			closesocket(ClientSock);
+			ClientSock = INVALID_SOCKET;
+			continue;
+		}
+
+		if (pass != USBread_INCOMP) {
+			closesocket(ClientSock);
+			ClientSock = INVALID_SOCKET;
+			continue;
+		}
+
+		if (send(ClientSock, (char*)&pass, 8, 0) == SOCKET_ERROR) {
+			closesocket(ClientSock);
+			ClientSock = INVALID_SOCKET;
+			continue;
+		}
+
+		pass = 0;
+
+		if (recv(ClientSock, (char*)&pass, 1, 0) <= 0) {
+			closesocket(ClientSock);
+			ClientSock = INVALID_SOCKET;
+			continue;
+		}
+
+		if (pass != USBread_COMP) {
+			closesocket(ClientSock);
+			ClientSock = INVALID_SOCKET;
+		}
+	} while (ClientSock == INVALID_SOCKET);
 
 	closesocket(MainSock);
 
@@ -142,9 +176,14 @@ int main_client(HWND hWnd) {
 			else if (keyName == USBread_LEFT) {
 				PostMessage(hWnd, WM_KEYDOWN, VK_LEFT, 0);
 			}
+			else if (keyName == USBread_SUCCESS) {
+				notiftray("Youth Poster successfully downloaded");
+			}
+			else if (keyName == USBread_ERROR) {
+				notiftray("Youth Poster failed to download");
+			}
 			else { continue; }
 		}
-		else if (sockstatus == 0) {}
 		else {
 			closesocket(ClientSock);
 			WSACleanup();

@@ -402,6 +402,29 @@ Rerun:
 					MainSock = INVALID_SOCKET;
 					continue;
 				}
+
+				unsigned long long pass = USBread_INCOMP;
+
+				if (send(MainSock, (char*)&pass, 1, 0) == SOCKET_ERROR) {
+					closesocket(MainSock);
+					MainSock = INVALID_SOCKET;
+					continue;
+				}
+
+				if (recv(MainSock, (char*)&pass, 8, 0) <= 0 || pass != USBread_PASS) {
+					closesocket(MainSock);
+					MainSock = INVALID_SOCKET;
+					continue;
+				}
+
+				pass = USBread_COMP;
+
+				if (send(MainSock, (char*)&pass, 1, 0) == SOCKET_ERROR) {
+					closesocket(MainSock);
+					MainSock = INVALID_SOCKET;
+					continue;
+				}
+
 				break;
 			}
 

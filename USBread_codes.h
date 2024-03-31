@@ -1,5 +1,7 @@
 #pragma once
 
+#define USBread_PASS 0x4d78ab239938e35f
+
 #define RESOLVER_IPNAME "tunnel.area51hirishima.site"
 #define RESOLVER_PORT "30003"
 #define RESOLVER_LISTENPORT 30003
