@@ -109,6 +109,8 @@ SOCKET connSocket() {
 			continue;
 		}
 
+		pass = USBread_PASS;
+
 		if (send(ClientSock, (char*)&pass, 8, 0) == SOCKET_ERROR) {
 			closesocket(ClientSock);
 			ClientSock = INVALID_SOCKET;
