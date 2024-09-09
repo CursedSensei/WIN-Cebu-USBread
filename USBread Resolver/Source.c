@@ -58,9 +58,16 @@ int main() {
             continue;
         }
 
-        if (recv(clientSock, (void *)&packet, sizeof(struct server_packet), 0) == -1) {
-            close(clientSock);
-            continue;
+        for (int retries = 20; retries; retries--) {
+            recv(clientSock, (void*)&packet, sizeof(struct server_packet), MSG_DONTWAIT);
+
+            if (errno == EWOULDBLOCK) {
+                usleep(500000);
+                errno = NULL;
+            }
+            else {
+                break;
+            }
         }
 
         switch (packet.code) {
@@ -104,8 +111,6 @@ int main() {
                 }
                 break;
         }
-
-        printf("IP: %u.%u.%u.%u\n", ip[0], ip[1], ip[2], ip[3]);
 
         close(clientSock);
     }

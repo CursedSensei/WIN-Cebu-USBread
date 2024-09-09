@@ -65,131 +65,150 @@ int main() {
 	int input = 1;
 
 	while (input != 0) {
-		printf("Get IP = 1\nGet Youth Poster = 2\nExit = 0\n\nOp: ");
+		printf("Get IP = 1\nGet Youth Poster = 2\nTest Resolver Timeout = 3\nExit = 0\n\nOp: ");
 
 		scanf_s("%d", &input);
 
 		switch (input) {
 		case 1:
-			server_packet packet;
-			ZeroMemory(&packet, sizeof(struct server_packet));
+			{
+				server_packet packet;
+				ZeroMemory(&packet, sizeof(struct server_packet));
 
-			getFromResolver(&packet);
+				getFromResolver(&packet);
 
-			if (packet.code = 0) {
-				printf("\nCannot connect to Resolver Server\n\n");
+				if (packet.code == 0) {
+					printf("\nCannot connect to Resolver Server\n\n");
+					break;
+				}
+
+				printf("\nIP: %u.%u.%u.%u\n\n", packet.data[0], packet.data[1], packet.data[2], packet.data[3]);
 			}
-
-			printf("\nIP: %u.%u.%u.%u\n\n", packet.data[0], packet.data[1], packet.data[2], packet.data[3]);
-
 			break;
 
 		case 2:
-			SOCKET resolveSock = getResolverSocket();
-			if (resolveSock == INVALID_SOCKET) {
-				printf("\nCannot connect to Resolver Server\n\n");
-				break;
-			}
+			{
+				SOCKET resolveSock = getResolverSocket();
+				if (resolveSock == INVALID_SOCKET) {
+					printf("\nCannot connect to Resolver Server\n\n");
+					break;
+				}
 
-			char code = USBread_YOUTH;
+				char code = USBread_YOUTH;
 
-			send(resolveSock, (char*)&code, 1, 0);
+				send(resolveSock, (char*)&code, 1, 0);
 
-			struct data_File youthFile;
-			youthFile.len = 0;
-			youthFile.data = (unsigned char*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, 0);
+				struct data_File youthFile;
+				youthFile.len = 0;
+				youthFile.data = (unsigned char*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, 0);
 
-			struct data_packet dataPacket;
-			int bytesReceived;
-			do {
-				unsigned long long curLen = youthFile.len + 112425;
-
-				youthFile.data = (unsigned char*)HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, youthFile.data, curLen);
-
+				struct data_packet dataPacket;
+				int bytesReceived;
 				do {
-					send(resolveSock, (char*)youthFile.data, 1, 0);
-					bytesReceived = recv(resolveSock, (char*)&dataPacket, sizeof(struct data_packet), 0);
-					if (bytesReceived <= 0) {
-						dataPacket.code = USBread_NODATA;
-						break;
-					}
+					unsigned long long curLen = youthFile.len + 112425;
 
-					memcpy(youthFile.data + youthFile.len, dataPacket.data, (size_t)bytesReceived - 1);
+					youthFile.data = (unsigned char*)HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, youthFile.data, curLen);
 
-					youthFile.len += (unsigned long long)bytesReceived - 1;
-				} while (youthFile.len < curLen && dataPacket.code == USBread_INCOMP);
-			} while (dataPacket.code == USBread_INCOMP);
+					do {
+						send(resolveSock, (char*)youthFile.data, 1, 0);
+						bytesReceived = recv(resolveSock, (char*)&dataPacket, sizeof(struct data_packet), 0);
+						if (bytesReceived <= 0) {
+							dataPacket.code = USBread_NODATA;
+							break;
+						}
 
-			closesocket(resolveSock);
+						memcpy(youthFile.data + youthFile.len, dataPacket.data, (size_t)bytesReceived - 1);
 
-			if (dataPacket.code == USBread_NODATA) {
-				HeapFree(GetProcessHeap(), 0, youthFile.data);
-				printf("\nNo Youth File\n\n");
-				break;
-			}
+						youthFile.len += (unsigned long long)bytesReceived - 1;
+					} while (youthFile.len < curLen && dataPacket.code == USBread_INCOMP);
+				} while (dataPacket.code == USBread_INCOMP);
 
-			char path[150] = "YOUTH ";
+				closesocket(resolveSock);
 
-			char date_fileSuffix[20];
+				if (dataPacket.code == USBread_NODATA) {
+					HeapFree(GetProcessHeap(), 0, youthFile.data);
+					printf("\nNo Youth File\n\n");
+					break;
+				}
 
-			GetDateFormatA(LOCALE_SYSTEM_DEFAULT, NULL, NULL, "yyyy'-'MM'-'dd", date_fileSuffix, 11);
+				char path[150] = "YOUTH ";
 
-			strcat_s(path, date_fileSuffix);
+				char date_fileSuffix[20];
 
-			unsigned short pathLen = strlen(path);
-			unsigned short file_num = 0;
-			strcpy_s(date_fileSuffix, ".png");
-			ZeroMemory(date_fileSuffix + 5, 6);
-			HANDLE fp;
-			do {
+				GetDateFormatA(LOCALE_SYSTEM_DEFAULT, NULL, NULL, "yyyy'-'MM'-'dd", date_fileSuffix, 11);
+
 				strcat_s(path, date_fileSuffix);
 
-				fp = CreateFileA(path, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
-				if (fp == INVALID_HANDLE_VALUE) {
-					switch (GetLastError()) {
-					case ERROR_FILE_EXISTS:
-					{
-						snprintf(date_fileSuffix, 20, " (%u).png", ++file_num);
-						ZeroMemory(path + pathLen, strlen(date_fileSuffix));
-					}
-					break;
-					case ERROR_PATH_NOT_FOUND:
-					{
-						char directoryPath[150];
-						ZeroMemory(directoryPath, 150);
-						memcpy(directoryPath, path, pathLen - 17);
-						if (!CreateDirectoryA(directoryPath, NULL)) {
-							fp = ERROR;
-						}
-						else {
+				unsigned short pathLen = strlen(path);
+				unsigned short file_num = 0;
+				strcpy_s(date_fileSuffix, ".png");
+				ZeroMemory(date_fileSuffix + 5, 6);
+				HANDLE fp;
+				do {
+					strcat_s(path, date_fileSuffix);
+
+					fp = CreateFileA(path, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+					if (fp == INVALID_HANDLE_VALUE) {
+						switch (GetLastError()) {
+						case ERROR_FILE_EXISTS:
+						{
+							snprintf(date_fileSuffix, 20, " (%u).png", ++file_num);
 							ZeroMemory(path + pathLen, strlen(date_fileSuffix));
 						}
+						break;
+						case ERROR_PATH_NOT_FOUND:
+						{
+							char directoryPath[150];
+							ZeroMemory(directoryPath, 150);
+							memcpy(directoryPath, path, pathLen - 17);
+							if (!CreateDirectoryA(directoryPath, NULL)) {
+								fp = ERROR;
+							}
+							else {
+								ZeroMemory(path + pathLen, strlen(date_fileSuffix));
+							}
+						}
+						break;
+						default:
+						{
+							fp = ERROR;
+						}
+						break;
+						}
 					}
-					break;
-					default:
-					{
-						fp = ERROR;
+					else {
+						DWORD written = 0;
+
+						WriteFile(fp, youthFile.data, youthFile.len, &written, NULL);
+
+						CloseHandle(fp);
 					}
-					break;
-					}
+				} while (fp == INVALID_HANDLE_VALUE);
+
+				HeapFree(GetProcessHeap(), 0, youthFile.data);
+
+				if (fp == ERROR) {
+					printf("\nDownload fail\n\n");
 				}
-				else {
-					DWORD written = 0;
 
-					WriteFile(fp, youthFile.data, youthFile.len, &written, NULL);
-
-					CloseHandle(fp);
-				}
-			} while (fp == INVALID_HANDLE_VALUE);
-
-			HeapFree(GetProcessHeap(), 0, youthFile.data);
-
-			if (fp == ERROR) {
-				printf("\nDownload fail\n\n");
+				printf("\nDownload success\n\n");
 			}
+			break;
 
-			printf("\nDownload success\n\n");
+		case 3:
+			{
+				SOCKET resolveSock = getResolverSocket();
+				if (resolveSock == INVALID_SOCKET) {
+					printf("\nCannot connect to Resolver Server\n\n");
+					break;
+				}
 
+				recv(resolveSock, nullptr, 0, 0);
+
+				closesocket(resolveSock);
+
+				printf("Resolver Socket closed\n\n");
+			}
 			break;
 		}
 	}
