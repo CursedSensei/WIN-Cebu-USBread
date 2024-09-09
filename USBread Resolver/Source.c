@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
+#include <errno.h>
 
 #define SOCKET int
 
@@ -63,7 +64,6 @@ int main() {
 
             if (errno == EWOULDBLOCK) {
                 usleep(500000);
-                errno = NULL;
             }
             else {
                 break;
