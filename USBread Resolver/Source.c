@@ -60,14 +60,14 @@ int main() {
         }
 
         for (int retries = 20; retries; retries--) {
-            recv(clientSock, (void*)&packet, sizeof(struct server_packet), MSG_DONTWAIT);
+            if (recv(clientSock, (void*)&packet, sizeof(struct server_packet), MSG_DONTWAIT) == -1) {
+                if (errno == EWOULDBLOCK) {
+                    usleep(500000);
+                    continue;
+                }
+            }
 
-            if (errno == EWOULDBLOCK) {
-                usleep(500000);
-            }
-            else {
-                break;
-            }
+            break;
         }
 
         switch (packet.code) {
