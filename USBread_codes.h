@@ -11,7 +11,8 @@ enum key_codes {
     USBread_RIGHT,
 
     USBread_SUCCESS,
-    USBread_ERROR
+    USBread_ERROR,
+    USBread_Empty
 };
 
 enum server_code {

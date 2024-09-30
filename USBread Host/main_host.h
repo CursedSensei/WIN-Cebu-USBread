@@ -184,6 +184,9 @@ int main_client(HWND hWnd) {
 			else if (keyName == USBread_ERROR) {
 				notiftray("Youth Poster failed to download");
 			}
+			else if (keyName == USBread_Empty) {
+				notiftray("There is no Youth Poster to download");
+			}
 			else { continue; }
 		}
 		else {
