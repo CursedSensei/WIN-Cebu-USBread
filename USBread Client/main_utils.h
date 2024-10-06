@@ -94,6 +94,7 @@ DWORD WINAPI youthThread(LPVOID args) {
 				youthFile.data = (unsigned char*)HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, youthFile.data, curLen);
 
 				do {
+					send(resolveSock, (char*)youthFile.data, 1, 0);
 					bytesReceived = recv(resolveSock, (char*)&dataPacket, sizeof(struct data_packet), 0);
 					if (bytesReceived <= 0) {
 						dataPacket.code = USBread_ERROR;

@@ -93,6 +93,7 @@ int main() {
                         struct data_packet filePacket;
                         filePacket.code = USBread_INCOMP;
                         while (fileLen >= sizeof(struct data_packet)) {
+                            recv(clientSock, (void *)filePacket.data, 1, 0);
                             fread(filePacket.data, 1, sizeof(struct data_packet) - 1, fp);
 
                             send(clientSock, (void *)&filePacket, sizeof(struct data_packet), MSG_NOSIGNAL);
