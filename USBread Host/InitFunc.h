@@ -14,19 +14,18 @@ int EndsWith(const char* str, const char* suffix)
 int getFileNum(char* fileName) {
 	int num = 0;
 	int maxBuf = strlen(fileName);
-	if (fileName[0] != 83) {
-		num = (maxBuf - 5) * 26;
-		num += fileName[maxBuf - 5] - 96;
+	if (fileName[0] != 'S') {
+		maxBuf -= 4;
+		for (int i = 0; i < maxBuf; i++) {
+			num *= 10;
+			num += fileName[i] - '0';
+		}
 	}
 	else {
-		int digits = maxBuf - 9;
-		int pow = 1;
-		for (int i = 1; i < digits; i++) {
-			pow = pow * 10;
-		}
-		for (int i = 5; pow >= 1; i++) {
-			num += pow * (fileName[i] - 48);
-			pow = pow / 10;
+		maxBuf -= 9;
+		for (int i = 0; i < maxBuf; i++) {
+			num *= 10;
+			num += fileName[i + 5] - '0';
 		}
 	}
 	return num;
