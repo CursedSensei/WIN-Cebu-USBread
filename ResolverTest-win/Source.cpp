@@ -15,15 +15,15 @@ SOCKET getResolverSocket() {
 		return INVALID_SOCKET;
 	}
 
-	for (hostinfo; hostinfo != NULL; hostinfo = hostinfo->ai_next) {
+	for (PADDRINFOA clientInfo = hostinfo; clientInfo != NULL; clientInfo = clientInfo->ai_next) {
 
-		MainSock = socket(hostinfo->ai_family, hostinfo->ai_socktype, hostinfo->ai_protocol);
+		MainSock = socket(clientInfo->ai_family, clientInfo->ai_socktype, clientInfo->ai_protocol);
 		if (MainSock == INVALID_SOCKET) {
 			freeaddrinfo(hostinfo);
 			return INVALID_SOCKET;
 		}
 
-		if (connect(MainSock, hostinfo->ai_addr, hostinfo->ai_addrlen) == SOCKET_ERROR) {
+		if (connect(MainSock, clientInfo->ai_addr, clientInfo->ai_addrlen) == SOCKET_ERROR) {
 			closesocket(MainSock);
 			MainSock = INVALID_SOCKET;
 			continue;
@@ -31,10 +31,7 @@ SOCKET getResolverSocket() {
 		break;
 	}
 
-	if (MainSock == INVALID_SOCKET) return INVALID_SOCKET;
-
-	else freeaddrinfo(hostinfo);
-
+	freeaddrinfo(hostinfo);
 	return MainSock;
 }
 
